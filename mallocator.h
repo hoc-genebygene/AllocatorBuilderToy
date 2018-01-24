@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 
+#include <iostream>
 #include <limits>
 #include <new>
 #include <type_traits>
@@ -11,6 +12,7 @@ namespace Mallocator {
 template <class T>
 class Mallocator {
 public:
+    // std::allocator_traits
     using value_type = T;
     using pointer = T*;                     
     using const_pointer = const T*;         
@@ -26,6 +28,9 @@ public:
     };
 
     using is_always_equal = std::true_type;
+
+    // custom allocator traits
+    using thread_safe = std::true_type;
 
     pointer address(reference x) const noexcept {
         return std::addressof(x);
@@ -46,10 +51,10 @@ public:
             throw std::length_error("Tried to allocate more than the allocator will support");
         }
 
-        T* mem_ptr;
-        int res = posix_memalign((void **)&mem_ptr, alignof(T), n * sizeof(T));
+        pointer mem_ptr = nullptr;
+        int res = posix_memalign((void **)&mem_ptr, std::max(alignof(T), sizeof(void *)), n * sizeof(T));
 
-        if (res == 0) {
+        if (res != 0) {
             throw std::bad_alloc();
         }
 

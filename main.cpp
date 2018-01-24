@@ -6,6 +6,7 @@
 #include "ThreadSafeAllocator.h"
 
 #include <iostream>
+#include <vector>
 
 using namespace AllocatorBuilder;
 
@@ -21,7 +22,7 @@ void ExerciseAlignedAllocator() {
 }
 
 void ExerciseSlabAllocator() {
-    SlabAllocator::SlabAllocator<int> slab_allocator_instance;
+    SlabAllocator::SlabAllocator<int, Mallocator::Mallocator> slab_allocator_instance;
     slab_allocator_instance.allocate(4);
 }
 
@@ -39,21 +40,35 @@ void ExerciseBuddyAllocator() {
 }
 
 void ExerciseThreadSafeAllocator() {
-    ThreadSafeAllocator::ThreadSafeAllocator<SlabAllocator::SlabAllocator<int>> thread_safe_slab_allocator;
+    ThreadSafeAllocator::ThreadSafeAllocator<SlabAllocator::SlabAllocator<int, Mallocator::Mallocator>> thread_safe_slab_allocator;
     thread_safe_slab_allocator.allocate(4);
 }
 
 void ExerciseThreadCachingAllocator() {
-    ThreadCachingAllocator::ThreadCachingAllocator<int, BuddyAllocator::BuddyAllocator<int, 16, 32>> thread_caching_allocator;
-    thread_caching_allocator.allocate(4);
+    ThreadCachingAllocator::ThreadCachingAllocator<int, Mallocator::Mallocator<int>> thread_caching_allocator;
+
+    auto allocate_task = [&thread_caching_allocator](){
+        for (int k = 0; k < 1000000; ++k) {
+            int * mem = thread_caching_allocator.allocate(4);
+            thread_caching_allocator.deallocate(mem, 4);
+        }
+    };
+
+    std::vector<std::thread> threads(1);
+    for (auto & thread : threads) {
+        thread = std::thread(allocate_task);
+    }
+
+    for (auto & thread : threads) {
+        thread.join();
+    }
 }
 
 int main() {
-    ExerciseMallocator();
-
-    ExerciseAlignedAllocator();
-    ExerciseSlabAllocator();
-    ExerciseBuddyAllocator();
-    ExerciseThreadSafeAllocator();
+    //ExerciseMallocator();
+    //ExerciseAlignedAllocator();
+    //ExerciseSlabAllocator();
+    //ExerciseBuddyAllocator();
+    //ExerciseThreadSafeAllocator();
     ExerciseThreadCachingAllocator();
 }

@@ -11,9 +11,10 @@
 
 namespace AllocatorBuilder {
 namespace SlabAllocator {
-template <class T>
+template <class T, template<class> class BackingAllocator>
 class SlabAllocator {
 public:
+    // std::allocator_traits
     using value_type = T;
     using pointer = T*;                     
     using const_pointer = const T*;         
@@ -23,12 +24,15 @@ public:
     using difference_type = std::ptrdiff_t; 
     using propagate_on_container_move_assignment = std::true_type;
 
-    template<class U>
-    struct rebind {
-        typedef SlabAllocator<U> other;
-    };
+//    template<class U, template<class> class OtherBackingAllocator>
+//    struct rebind {
+//        typedef SlabAllocator<U, OtherBackingAllocator> other;
+//    };
 
     using is_always_equal = std::true_type;
+
+    // custom allocator traits
+    using thread_safe = std::false_type;
 
     pointer address(reference x) const noexcept { 
         return std::addressof(x);
@@ -236,7 +240,7 @@ private:
         SlabMetadata metadata_;
     };
 
-    std::deque<Slab> allocated_slabs_;
+    std::deque<Slab, BackingAllocator<Slab>> allocated_slabs_;
 
     std::list<Slab *> empty_slabs_;
     std::list<Slab *> partial_slabs_;

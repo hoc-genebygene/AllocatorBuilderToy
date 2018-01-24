@@ -11,9 +11,17 @@
 
 namespace AllocatorBuilder {
 namespace ThreadCachingAllocator {
+namespace detail {
+class ThreadCache {
+
+};
+} // namespace detail
+
+
 template <class T, class BackingAllocator, size_t NumArenas = 8>
 class ThreadCachingAllocator {
 public:
+    // std::allocator_traits
     using value_type = T;
     using pointer = T*;
     using const_pointer = const T*;
@@ -30,7 +38,10 @@ public:
 
     using is_always_equal = std::true_type;
 
-    ThreadCachingAllocator() : arenas_(NumArenas) {}
+    // custom allocator traits
+    using thread_safe = std::true_type;
+
+//    static_assert(std::is_same<typename BackingAllocator::thread_safe, std::true_type>::value, "Backing allocator must be lock-safe");
 
     pointer address(reference x) const noexcept {
         return std::addressof(x);
@@ -40,42 +51,25 @@ public:
         return std::addressof(x);
     }
 
+    ThreadCachingAllocator() {
+//        int res = pthread_key_create(thread_cache_key_);
+//        if (res != 0) {
+//            throw std::runtime_error("Could not create pthread thread-specific-data key");
+//        }
+    }
+
     pointer allocate(std::size_t n, const void * hint) {
         // purposefully ignore hint
         return allocate(n);
     }
 
     pointer allocate(std::size_t n) {
-        std::thread::id thread_id = std::this_thread::get_id();
-        
-
-        auto it = arenas_.find(thread_id);
-        if (it == arenas_.end()) {
-            auto res = arenas_.emplace(thread_id, BackingAllocator{});
-            it = res.first;
-
-            assert(res.second);
-        }
-
-        // it should now point to an allocator
-        auto & allocator = it->second;
-        pointer mem = allocator.allocate(n);
-
-        memory_to_allocator_map_.emplace(mem, &allocator);
-
-        return mem;
+        // TODO
+        return nullptr;
     }
 
     void deallocate(pointer p, std::size_t n) {
-        auto it = memory_to_allocator_map_.find(p);
-        if (it == memory_to_allocator_map_.end()) {
-            assert(0);
-            throw std::logic_error("Deallocated something that wasn't allocated here");
-            return;
-        }
-
-        auto & allocator = it->second;
-        allocator.deallocate(p);
+        // TODO
     }
 
     size_type max_size() const noexcept {
@@ -92,8 +86,9 @@ public:
         p->~U();
     }
 private:
-    std::unordered_map<std::thread::id, BackingAllocator> arenas_;
-    std::unordered_map<pointer, BackingAllocator *> memory_to_allocator_map_;
+    BackingAllocator allocator_;
+
+    pthread_key_t thread_cache_key_;
 };
 } // namespace ThreadCachingAllocator
 } // namespace AllocatorBuilder

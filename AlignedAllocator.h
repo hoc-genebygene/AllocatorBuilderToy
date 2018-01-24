@@ -15,6 +15,7 @@ class AlignedAllocator {
 public:
     static_assert(Alignment >= alignof(T), "Requested Alignment should be larger than or equal to the minimum required for T");
 
+    // std::allocator_traits
     using value_type = T;
     using pointer = T*;
     using const_pointer = const T*;
@@ -30,6 +31,9 @@ public:
     };
 
     using is_always_equal = std::true_type;
+
+    // custom allocator traits
+    using thread_safe = std::false_type;
 
     pointer address(reference x) const noexcept {
         return std::addressof(x);

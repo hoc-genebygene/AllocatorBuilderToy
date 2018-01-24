@@ -156,6 +156,7 @@ private:
 template <class T, size_t MinSize, size_t MaxSize>
 class BuddyAllocator {
 public:
+    // std::allocator_traits
     using value_type = T;
     using pointer = T*;
     using const_pointer = const T*;
@@ -165,13 +166,15 @@ public:
     using difference_type = std::ptrdiff_t;
     using propagate_on_container_move_assignment = std::true_type;
 
-// TODO
-//    template< class U, size_t OtherMaxElements >
-//    struct rebind {
-//        typedef BuddyAllocator<U, OtherMaxElements> other;
-//    };
+    template< class U, size_t OtherMinSize, size_t OtherMaxSize >
+    struct rebind {
+        typedef BuddyAllocator<U, OtherMinSize, OtherMaxSize> other;
+    };
 
     using is_always_equal = std::true_type;
+
+    // custom allocator traits
+    using thread_safe = std::false_type;
 
     static_assert(IsPowerOf2(MinSize), "MinSize must be power of 2");
     static_assert(IsPowerOf2(MaxSize), "MaxSize must be power of 2");

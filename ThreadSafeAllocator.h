@@ -8,6 +8,7 @@ namespace ThreadSafeAllocator {
 template <class BaseAllocator>
 class ThreadSafeAllocator {
 public:
+    // std::allocator_traits
     using value_type = typename BaseAllocator::value_type;
     using pointer = typename BaseAllocator::pointer;
     using const_pointer = typename BaseAllocator::const_pointer;
@@ -17,10 +18,13 @@ public:
     using difference_type = typename BaseAllocator::difference_type;
     using propagate_on_container_move_assignment = typename BaseAllocator::propagate_on_container_move_assignment;
 
-    template<class U>
-    using rebind = typename BaseAllocator::template rebind<U>;
+//    template<class U>
+//    using rebind = typename BaseAllocator::template rebind<U>;
 
     using is_always_equal = typename BaseAllocator::is_always_equal;
+
+    // custom allocator traits
+    using thread_safe = std::true_type;
 
     template <class... Args>
     ThreadSafeAllocator(Args&&... args) : allocator_(std::forward<Args>(args)...) {}
